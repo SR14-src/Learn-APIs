@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Chat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 2rem; }
+    .container { width: 100%; max-width: 600px; }
+    h2 { margin-bottom: 1rem; font-size: 1.2rem; color: #333; }
+    #status { padding: 6px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 1rem; background: #fee; color: #c00; }
+    #status.connected { background: #efe; color: #060; }
+    #messages { background: #fff; border: 1px solid #ddd; border-radius: 8px; height: 320px; overflow-y: auto; padding: 1rem; margin-bottom: 1rem; font-size: 13px; }
+    .msg { padding: 6px 0; border-bottom: 1px solid #f0f0f0; line-height: 1.5; }
+    .msg:last-child { border-bottom: none; }
+    .msg .who { font-weight: 600; color: #444; }
+    .msg.system { color: #888; font-style: italic; }
+    .msg.me { color: #1a73e8; }
+    .msg.private { color: #9c27b0; }
+    .msg.error { color: #c00; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+    button { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; background: #1a73e8; color: #fff; }
+    button:hover { background: #1557b0; }
+    button.secondary { background: #666; }
+    button.secondary:hover { background: #444; }
+    label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>WebSocket Chat</h2>
+
+  <div id="status">Disconnected</div>
+
+  <div id="messages"></div>
+
+  <!-- Broadcast message -->
+  <label>Broadcast message (to everyone)</label>
+  <div class="row">
+    <input id="msgInput" placeholder="Type a message..." />
+    <button onclick="sendChat()">Send</button>
+  </div>
+
+  <!-- Private message -->
+  <label>Private message (to specific client)</label>
+  <div class="row">
+    <input id="privateMsg" placeholder="Message..." />
+    <input id="targetId" placeholder="Client ID" style="flex:0;width:90px" type="number"/>
+    <button class="secondary" onclick="sendPrivate()">Send Private</button>
+  </div>
+
+  <!-- Actions -->
+  <div class="row" style="margin-top:4px">
+    <button class="secondary" onclick="listClients()">List Clients</button>
+    <button class="secondary" onclick="disconnect()">Disconnect</button>
+  </div>
+</div>
+
+<script>
+  let ws = null;
+  let myId = null;
+
+  // Auto-connect on page load
+  window.onload = connect;
+
+  function connect() {
+    ws = new WebSocket('ws://localhost:8080');
+
+    ws.onopen = () => {
+      setStatus(true);
+      addMessage('system', 'Connected to server');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      switch (data.type) {
+        case 'welcome':
+          myId = data.clientId;
+          addMessage('system', `${data.message} (${data.totalClients} online)`);
+          break;
+        case 'chat':
+          const isMe = data.from === `Client ${myId}`;
+          addMessage(isMe ? 'me' : 'chat',
+            `${data.from}: ${data.message}`);
+          break;
+        case 'private':
+          addMessage('private', `[Private] ${data.from}: ${data.message}`);
+          break;
+        case 'private_sent':
+          addMessage('private', `[Private to ${data.to}]: ${data.message}`);
+          break;
+        case 'user_joined':
+          addMessage('system', `${data.message} (${data.totalClients} online)`);
+          break;
+        case 'user_left':
+          addMessage('system', `${data.message} (${data.totalClients} online)`);
+          break;
+        case 'list':
+          addMessage('system', `Online clients: ${data.clients.join(', ')} (total: ${data.total})`);
+          break;
+        case 'error':
+          addMessage('error', `Error: ${data.message}`);
+          break;
+      }
+    };
+
+    ws.onclose = () => {
+      setStatus(false);
+      addMessage('system', 'Disconnected from server');
+    };
+
+    ws.onerror = () => {
+      addMessage('error', 'Connection error');
+    };
+  }
+
+  function sendChat() {
+    const input = document.getElementById('msgInput');
+    const message = input.value.trim();
+    if (!message || !ws) return;
+    ws.send(JSON.stringify({ type: 'chat', message }));
+    input.value = '';
+  }
+
+  function sendPrivate() {
+    const message = document.getElementById('privateMsg').value.trim();
+    const targetId = Number(document.getElementById('targetId').value);
+    if (!message || !targetId || !ws) return;
+    ws.send(JSON.stringify({ type: 'private', message, targetId }));
+    document.getElementById('privateMsg').value = '';
+  }
+
+  function listClients() {
+    if (!ws) return;
+    ws.send(JSON.stringify({ type: 'list' }));
+  }
+
+  function disconnect() {
+    if (ws) ws.close();
+  }
+
+  // Press Enter to send
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChat();
+  });
+
+  function addMessage(type, text) {
+    const box = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `msg ${type}`;
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function setStatus(connected) {
+    const el = document.getElementById('status');
+    el.textContent = connected ? 'Connected' : 'Disconnected';
+    el.className = connected ? 'connected' : '';
+  }
+</script>
+</body>
+</html>

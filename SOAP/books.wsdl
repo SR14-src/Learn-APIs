@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions
+  name="BooksService"
+  targetNamespace="http://localhost/books"
+  xmlns="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tns="http://localhost/books"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <!-- ========== DATA TYPES ========== -->
+  <types>
+    <xsd:schema targetNamespace="http://localhost/books">
+
+      <xsd:element name="GetBookRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetBookResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id"     type="xsd:int"/>
+            <xsd:element name="title"  type="xsd:string"/>
+            <xsd:element name="author" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="AddBookRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="title"  type="xsd:string"/>
+            <xsd:element name="author" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="AddBookResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id"      type="xsd:int"/>
+            <xsd:element name="title"   type="xsd:string"/>
+            <xsd:element name="author"  type="xsd:string"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="DeleteBookRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="DeleteBookResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </types>
+
+  <!-- ========== MESSAGES ========== -->
+  <message name="GetBookInput">
+    <part name="parameters" element="tns:GetBookRequest"/>
+  </message>
+  <message name="GetBookOutput">
+    <part name="parameters" element="tns:GetBookResponse"/>
+  </message>
+
+  <message name="AddBookInput">
+    <part name="parameters" element="tns:AddBookRequest"/>
+  </message>
+  <message name="AddBookOutput">
+    <part name="parameters" element="tns:AddBookResponse"/>
+  </message>
+
+  <message name="DeleteBookInput">
+    <part name="parameters" element="tns:DeleteBookRequest"/>
+  </message>
+  <message name="DeleteBookOutput">
+    <part name="parameters" element="tns:DeleteBookResponse"/>
+  </message>
+
+  <!-- ========== PORT TYPE (operations) ========== -->
+  <portType name="BooksPortType">
+    <operation name="GetBook">
+      <input  message="tns:GetBookInput"/>
+      <output message="tns:GetBookOutput"/>
+    </operation>
+    <operation name="AddBook">
+      <input  message="tns:AddBookInput"/>
+      <output message="tns:AddBookOutput"/>
+    </operation>
+    <operation name="DeleteBook">
+      <input  message="tns:DeleteBookInput"/>
+      <output message="tns:DeleteBookOutput"/>
+    </operation>
+  </portType>
+
+  <!-- ========== BINDING ========== -->
+  <binding name="BooksBinding" type="tns:BooksPortType">
+    <soap:binding style="document"
+      transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="GetBook">
+      <soap:operation soapAction="GetBook"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+
+    <operation name="AddBook">
+      <soap:operation soapAction="AddBook"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+
+    <operation name="DeleteBook">
+      <soap:operation soapAction="DeleteBook"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <!-- ========== SERVICE ========== -->
+  <service name="BooksService">
+    <port name="BooksPort" binding="tns:BooksBinding">
+      <soap:address location="http://localhost:4000/books"/>
+    </port>
+  </service>
+
+</definitions>
